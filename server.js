@@ -23,10 +23,32 @@ function handleRegister(request, response) {
 
     console.log(`Registering new user: ${username}:${password}`);
 
-    response.redirect("home.html");
+    createUser(username, password, function(error, data) {
+        response.redirect("home.html");
+    });
 }
 
 ////////  model.js here //////
 const dbConnectionString = process.env.DATABASE_URL;
 console.log(`DB connection: ${dbConnectionString}`);
-const myPool = Pool();
+const myPool = Pool({connectionString: dbConnectionString});
+
+function createUser(username, password, callback) {
+
+    const sql = "INSERT INTO users (username, password) VALUES($1, $2) RETURNING  id";
+    const params = [username, password];
+
+    myPool.query(sql, params, function(error, result) {
+        if (error) {
+            console.log("An error occurred in the DB");
+            console.log(error);
+
+            callback(error, null);
+        } else {
+            console.log("DB Query finished");
+            console.log(result.rows);
+            callback(null, result.rows);
+        }
+
+    });
+}
